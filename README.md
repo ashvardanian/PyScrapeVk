@@ -1,4 +1,5 @@
-Python vk.com API wrapper
+Python wrapper for Vk. This fork supports multi-object responses and silent iteration over errors.
+
 =========================
 
 [![PyPI](https://img.shields.io/pypi/pyversions/vk.svg)](https://pypi.org/project/vk/ "Latest version on PyPI")
@@ -6,17 +7,19 @@ Python vk.com API wrapper
 [![Docs](https://readthedocs.org/projects/vk/badge/?version=stable)](https://vk.readthedocs.io/en/latest/ "Read the docs")
 [![codecov](https://codecov.io/gh/voronind/vk/branch/master/graph/badge.svg)](https://codecov.io/gh/voronind/vk "Coverage")
 
-This is a vk.com (the largest Russian social network)
-python API wrapper. The goal is to support all API methods (current and future)
-that can be accessed from server.
-
 Quickstart
 ==========
 
 Install
 -------
 
-```console
+This version:
+```sh
+pip install git+https://github.com/ashvardanian/vk.git
+```
+
+Original version:
+```sh
 pip install vk
 ```
 
@@ -25,9 +28,9 @@ Usage
 
 ```python
 >>> import vk
->>> session = vk.Session()
->>> api = vk.API(session)
->>> api.users.get(user_ids=1)
+>>> api = vk.API(access_token = '', lang = 'en', v = '5.103')
+>>> api.session.proxies = self.proxies_dict()
+>>> list(api.users.get(user_ids=1))
 [{'first_name': 'Pavel', 'last_name': 'Durov', 'id': 1}]
 ```
 
