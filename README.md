@@ -6,27 +6,24 @@ This fork supports multi-object responses and silent iteration over errors.
 [![Docs](https://readthedocs.org/projects/vk/badge/?version=stable)](https://vk.readthedocs.io/en/latest/ "Read the docs")
 [![codecov](https://codecov.io/gh/voronind/vk/branch/master/graph/badge.svg)](https://codecov.io/gh/voronind/vk "Coverage")
 
-Quickstart
-==========
+# Quickstart
 
-Install
--------
+## Install
 
 This version:
 ```sh
-pip install git+https://github.com/ashvardanian/PyScrapeVk.git
+$ pip install git+https://github.com/ashvardanian/PyScrapeVk.git
 ```
 
 Original version:
 ```sh
-pip install vk
+$ pip install vk
 ```
 
-Usage
------
+## Usage
 
 ```python
->>> import vk
+>>> import ig
 >>> api = vk.API(access_token = '', lang = 'en', v = '5.103')
 >>> api.session.proxies = self.proxies_dict()
 >>> list(api.users.get(user_ids=1))
@@ -34,9 +31,8 @@ Usage
 [{'first_name': 'Pavel', 'last_name': 'Durov', 'id': 1}]
 ```
 
-See https://vk.com/dev/methods for detailed API guide.
+See [Vk docs](https://vk.com/dev/methods) for detailed API guide.
 
-More info
-=========
+# More info
 
-Read full documentation https://vk.readthedocs.org
+Read full [documentation](https://vk.readthedocs.org)
