@@ -1,6 +1,7 @@
 import re
 import urllib
 import logging
+from abc import abstractmethod
 
 import requests
 
@@ -12,7 +13,7 @@ from .utils import json_iter_parse, stringify
 
 logger = logging.getLogger('vk')
 
-class APISilentGenerator:
+class SilentAPI:
     METHOD_COMMON_PARAMS = {'v', 'lang', 'https', 'test_mode'}
     API_URL = 'https://api.vk.com/method/'
     CAPTCHA_URL = 'https://m.vk.com/captcha.php'
@@ -24,6 +25,7 @@ class APISilentGenerator:
         return APINamespace(api, method_common_params)
 
     def __init__(self, timeout=10):
+        self.access_token = None
         self.timeout = timeout
         self.session = requests.Session()
         self.session.headers['Accept'] = 'application/json'
@@ -34,23 +36,29 @@ class APISilentGenerator:
         self.prepare_request(request)
         method_url = self.API_URL + request.method
         response = self.session.post(method_url, request.method_params, timeout=self.timeout)
-
+        # Make sure we don't have any generic HTTP errors.
         try:
             response.raise_for_status()
         except Exception as e: 
             yield e
             return
-
+        # Split the incoming stream of JSON dictionaries 
+        # or arrays into conceise separate objects.
         for resp in json_iter_parse(response.text):
             if 'error' in resp:
                 yield VkAPIError(resp['error'])                
             elif 'response' in resp:
                 yield resp['response']
 
-class APIAutoCorrecting(APISilentGenerator):
+    @abstractmethod
+    def prepare_request(self, request):
+        if self.access_token is not None:
+            request.method_params['access_token'] = self.access_token
+
+class LoudAPI(SilentAPI):
 
     def send(self, request):
-        for resp in super().send(self, request):
+        for resp in SilentAPI.send(self, request):
             if isinstance(resp, VkAPIError):                
                 # if resp.code == CAPTCHA_IS_NEEDED:
                 #     request.method_params['captcha_key'] = self.get_captcha_key(request)
@@ -67,8 +75,6 @@ class APIAutoCorrecting(APISilentGenerator):
             else:
                 yield resp
 
-    def prepare_request(self, request):
-        request.method_params['access_token'] = self.access_token
 
     def get_access_token(self):
         raise NotImplementedError
@@ -77,13 +83,13 @@ class APIAutoCorrecting(APISilentGenerator):
         raise NotImplementedError
 
 
-class API(APIAutoCorrecting):
+class API(LoudAPI):
     def __init__(self, access_token, **kwargs):
         super().__init__(**kwargs)
         self.access_token = access_token
 
 
-class UserAPI(APIAutoCorrecting):
+class UserAPI(LoudAPI):
     LOGIN_URL = 'https://m.vk.com'
     AUTHORIZE_URL = 'https://oauth.vk.com/authorize'
 
