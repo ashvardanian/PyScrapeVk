@@ -1,5 +1,5 @@
-from .session import API, UserAPI, CommunityAPI
+from .session import SilentAPI, API, UserAPI, CommunityAPI
+from .exceptions import VkAPIError
 
-__version__ = '3.0-dev'
-
-__all__ = (API, UserAPI, CommunityAPI)
+__version__ = '3.1'
+__all__ = (SilentAPI, API, UserAPI, CommunityAPI)
