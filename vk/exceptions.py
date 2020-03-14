@@ -1,19 +1,22 @@
 
 # API Error Codes
+# https://vk.com/dev/errors
 AUTHORIZATION_FAILED = 5    # Invalid access token
 PERMISSION_IS_DENIED = 7
 CAPTCHA_IS_NEEDED = 14
 ACCESS_DENIED = 15          # No access to call this method
 INVALID_USER_ID = 113       # User deactivated
-
+USER_DELETED_OR_BANNED = 18
+PRIVATE_PROFILE = 30
+ALBUM_ACCESS_DENIED = 200
+AUDIO_ACCESS_DENIED = 201
+GROUP_ACCESS_DENIED = 203
 
 class VkException(Exception):
     pass
 
-
 class VkAuthError(VkException):
     pass
-
 
 class VkAPIError(VkException):
     __slots__ = ['error', 'code', 'message', 'request_params', 'redirect_uri']
