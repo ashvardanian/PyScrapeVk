@@ -5,60 +5,67 @@ import logging
 import requests
 
 from .exceptions import VkAuthError, VkAPIError
+from .exceptions import CAPTCHA_IS_NEEDED as CAPTCHA_IS_NEEDED
+from .exceptions import ACCESS_DENIED as ACCESS_DENIED
 from .api import APINamespace
 from .utils import json_iter_parse, stringify
 
 logger = logging.getLogger('vk')
 
-
-class APIBase:
+class APISilentGenerator:
     METHOD_COMMON_PARAMS = {'v', 'lang', 'https', 'test_mode'}
-
     API_URL = 'https://api.vk.com/method/'
     CAPTCHA_URL = 'https://m.vk.com/captcha.php'
 
     def __new__(cls, *args, **kwargs):
         method_common_params = {key: kwargs.pop(key) for key in tuple(kwargs) if key in cls.METHOD_COMMON_PARAMS}
-
         api = object.__new__(cls)
         api.__init__(*args, **kwargs)
-
         return APINamespace(api, method_common_params)
 
     def __init__(self, timeout=10):
         self.timeout = timeout
-
         self.session = requests.Session()
         self.session.headers['Accept'] = 'application/json'
         self.session.headers['Content-Type'] = 'application/x-www-form-urlencoded'
 
     def send(self, request):
-
         logger.debug('Prepare API Method request')
-
         self.prepare_request(request)
-
         method_url = self.API_URL + request.method
         response = self.session.post(method_url, request.method_params, timeout=self.timeout)
 
-        # todo Replace with something less exceptional
-        response.raise_for_status()
+        try:
+            response.raise_for_status()
+        except Exception as e: 
+            yield e
+            return
 
-        # TODO: there are may be 2 dicts in one JSON
-        # for example: "{'error': ...}{'response': ...}"
-        for response_or_error in json_iter_parse(response.text):
-            request.response = response_or_error
+        for resp in json_iter_parse(response.text):
+            if 'error' in resp:
+                yield VkAPIError(resp['error'])                
+            elif 'response' in resp:
+                yield resp['response']
 
-            if 'response' in response_or_error:
-                # todo Can we have error and response simultaneously
-                # for error in errors:
-                #     logger.warning(str(error))
-                return response_or_error['response']
+class APIAutoCorrecting(APISilentGenerator):
 
-            elif 'error' in response_or_error:
-                api_error = VkAPIError(request.response['error'])
-                request.api_error = api_error
-                return self.handle_api_error(request)
+    def send(self, request):
+        for resp in super().send(self, request):
+            if isinstance(resp, VkAPIError):                
+                # if resp.code == CAPTCHA_IS_NEEDED:
+                #     request.method_params['captcha_key'] = self.get_captcha_key(request)
+                #     request.method_params['captcha_sid'] = request.api_error.captcha_sid
+                #     yield from self.send(request)
+                # elif resp.code == ACCESS_DENIED:
+                #     self.access_token = self.get_access_token()
+                #     yield from self.send(request)
+                # else:
+                #     raise resp
+                raise resp
+            elif isinstance(resp, Exception):
+                raise resp
+            else:
+                yield resp
 
     def prepare_request(self, request):
         request.method_params['access_token'] = self.access_token
@@ -66,52 +73,17 @@ class APIBase:
     def get_access_token(self):
         raise NotImplementedError
 
-    def handle_api_error(self, request):
-        logger.error('Handle API error: %s', request.api_error)
-
-        api_error_handler_name = 'on_api_error_' + str(request.api_error.code)
-        api_error_handler = getattr(self, api_error_handler_name, self.on_api_error)
-
-        return api_error_handler(request)
-
-    def on_api_error_14(self, request):
-        """
-        14. Captcha needed
-        """
-        request.method_params['captcha_key'] = self.get_captcha_key(request)
-        request.method_params['captcha_sid'] = request.api_error.captcha_sid
-
-        return self.send(request)
-
-    def on_api_error_15(self, request):
-        """
-        15. Access denied
-            - due to scope
-        """
-        logger.error('Authorization failed. Access token will be dropped')
-        self.access_token = self.get_access_token()
-        return self.send(request)
-
-    def on_api_error(self, request):
-        logger.error('API error: %s', request.api_error)
-        raise request.api_error
-
     def get_captcha_key(self, request):
-        """
-        Default behavior on CAPTCHA is to raise exception
-        Reload this in child
-        """
-        # request.api_error.captcha_img
-        raise request.api_error
+        raise NotImplementedError
 
 
-class API(APIBase):
+class API(APIAutoCorrecting):
     def __init__(self, access_token, **kwargs):
         super().__init__(**kwargs)
         self.access_token = access_token
 
 
-class UserAPI(APIBase):
+class UserAPI(APIAutoCorrecting):
     LOGIN_URL = 'https://m.vk.com'
     AUTHORIZE_URL = 'https://oauth.vk.com/authorize'
 

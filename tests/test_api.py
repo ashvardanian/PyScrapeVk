@@ -33,5 +33,5 @@ def test_durov(api):
     """
     Get users
     """
-    users = api.users.get(user_id=1)
+    users = list(api.users.get(user_id=1))
     assert users[0]['last_name'] == 'Durov'

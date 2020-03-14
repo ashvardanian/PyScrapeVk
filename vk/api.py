@@ -29,7 +29,7 @@ class APIMethod:
         request_method_params = self._method_common_params.copy()
         request_method_params.update(stringify_values(method_params))
 
-        return self._api.send(APIRequest(self._method, request_method_params))
+        yield from self._api.send(APIRequest(self._method, request_method_params))
 
 
 class APIRequest:
