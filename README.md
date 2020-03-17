@@ -1,3 +1,5 @@
+# PyScrapeVk
+
 Python wrapper for Vk.com (Vkontakte.ru) API. 
 This fork supports multi-object responses and silent iteration over errors.
 
@@ -5,8 +7,6 @@ This fork supports multi-object responses and silent iteration over errors.
 [![Travis](https://travis-ci.com/voronind/vk.svg?branch=master)](https://travis-ci.com/voronind/vk "Travis CI")
 [![Docs](https://readthedocs.org/projects/vk/badge/?version=stable)](https://vk.readthedocs.io/en/latest/ "Read the docs")
 [![codecov](https://codecov.io/gh/voronind/vk/branch/master/graph/badge.svg)](https://codecov.io/gh/voronind/vk "Coverage")
-
-# Quickstart
 
 ## Install
 
@@ -33,6 +33,6 @@ $ pip install vk
 
 See [Vk docs](https://vk.com/dev/methods) for detailed API guide.
 
-# More info
+## More info
 
 Read full [documentation](https://vk.readthedocs.org)
